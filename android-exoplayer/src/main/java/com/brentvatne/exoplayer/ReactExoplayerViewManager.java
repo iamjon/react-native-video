@@ -1,5 +1,6 @@
 package com.brentvatne.exoplayer;
 
+import android.app.Application;
 import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
@@ -21,12 +22,18 @@ import javax.annotation.Nullable;
 
 public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerView> {
 
+    Application application;
+    public ReactExoplayerViewManager(Application application) {
+        this.application = application;
+    }
+
     private static final String REACT_CLASS = "RCTVideo";
 
     private static final String PROP_SRC = "src";
     private static final String PROP_SRC_URI = "uri";
     private static final String PROP_SRC_TYPE = "type";
     private static final String PROP_SRC_HEADERS = "requestHeaders";
+    private static final String PROP_TITLE = "title";
     private static final String PROP_RESIZE_MODE = "resizeMode";
     private static final String PROP_REPEAT = "repeat";
     private static final String PROP_SELECTED_AUDIO_TRACK = "selectedAudioTrack";
@@ -59,7 +66,7 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
 
     @Override
     protected ReactExoplayerView createViewInstance(ThemedReactContext themedReactContext) {
-        return new ReactExoplayerView(themedReactContext);
+        return new ReactExoplayerView(themedReactContext, application);
     }
 
     @Override
@@ -124,6 +131,11 @@ public class ReactExoplayerViewManager extends ViewGroupManager<ReactExoplayerVi
                 }
             }
         }
+    }
+
+    @ReactProp(name = PROP_TITLE)
+    public void setTitle(final ReactExoplayerView videoView, final String title) {
+        videoView.setTitle(title);
     }
 
     @ReactProp(name = PROP_RESIZE_MODE)

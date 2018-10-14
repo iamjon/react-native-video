@@ -1,5 +1,7 @@
 package com.brentvatne.react;
 
+import android.app.Application;
+
 import com.brentvatne.exoplayer.ReactExoplayerViewManager;
 import com.facebook.react.ReactPackage;
 import com.facebook.react.bridge.JavaScriptModule;
@@ -11,6 +13,11 @@ import java.util.Collections;
 import java.util.List;
 
 public class ReactVideoPackage implements ReactPackage {
+
+    Application application;
+    public ReactVideoPackage(Application application) {
+        this.application = application;
+    }
 
     @Override
     public List<NativeModule> createNativeModules(ReactApplicationContext reactContext) {
@@ -24,6 +31,6 @@ public class ReactVideoPackage implements ReactPackage {
 
     @Override
     public List<ViewManager> createViewManagers(ReactApplicationContext reactContext) {
-        return Collections.<ViewManager>singletonList(new ReactExoplayerViewManager());
+        return Collections.<ViewManager>singletonList(new ReactExoplayerViewManager(application));
     }
 }

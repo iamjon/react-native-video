@@ -2,11 +2,13 @@ package com.brentvatne.exoplayer;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.Application;
 import android.content.Context;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Message;
+import android.support.v4.app.NotificationCompat;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
@@ -17,6 +19,7 @@ import android.widget.FrameLayout;
 import com.brentvatne.react.R;
 import com.brentvatne.receiver.AudioBecomingNoisyReceiver;
 import com.brentvatne.receiver.BecomingNoisyListener;
+import com.brentvatne.service.MusicControlNotification;
 import com.facebook.react.bridge.Arguments;
 import com.facebook.react.bridge.Dynamic;
 import com.facebook.react.bridge.LifecycleEventListener;
@@ -53,14 +56,13 @@ import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
-import com.google.android.exoplayer2.trackselection.FixedTrackSelection;
 import com.google.android.exoplayer2.trackselection.MappingTrackSelector;
 import com.google.android.exoplayer2.trackselection.TrackSelection;
 import com.google.android.exoplayer2.trackselection.TrackSelectionArray;
+import com.google.android.exoplayer2.ui.PlayerNotificationManager;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultAllocator;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
-import com.google.android.exoplayer2.util.MimeTypes;
 import com.google.android.exoplayer2.util.Util;
 
 import java.net.CookieHandler;
@@ -81,6 +83,7 @@ class ReactExoplayerView extends FrameLayout implements
         MetadataRenderer.Output {
 
     private static final String TAG = "ReactExoplayerView";
+    private PlayerNotificationManager playerNotificationManager;
 
     private static final DefaultBandwidthMeter BANDWIDTH_METER = new DefaultBandwidthMeter();
     private static final CookieManager DEFAULT_COOKIE_MANAGER;
@@ -117,6 +120,7 @@ class ReactExoplayerView extends FrameLayout implements
 
     // Props from React
     private Uri srcUri;
+    private String title;
     private String extension;
     private boolean repeat;
     private String audioTrackType;
@@ -134,8 +138,10 @@ class ReactExoplayerView extends FrameLayout implements
 
     // React
     private final ThemedReactContext themedReactContext;
+    private final Application application;
     private final AudioManager audioManager;
     private final AudioBecomingNoisyReceiver audioBecomingNoisyReceiver;
+    private final MusicControlNotification musicControlNotification;
 
     private final Handler progressHandler = new Handler() {
         @Override
@@ -157,17 +163,24 @@ class ReactExoplayerView extends FrameLayout implements
         }
     };
 
-    public ReactExoplayerView(ThemedReactContext context) {
+    public ReactExoplayerView(ThemedReactContext context, Application application) {
         super(context);
         this.themedReactContext = context;
+        this.application = application;
         createViews();
         this.eventEmitter = new VideoEventEmitter(context);
         audioManager = (AudioManager) context.getSystemService(Context.AUDIO_SERVICE);
         themedReactContext.addLifecycleEventListener(this);
         audioBecomingNoisyReceiver = new AudioBecomingNoisyReceiver(themedReactContext);
+        musicControlNotification = new MusicControlNotification(themedReactContext, application);
 
         initializePlayer();
     }
+
+
+
+
+
 
 
     @Override
@@ -238,6 +251,24 @@ class ReactExoplayerView extends FrameLayout implements
 
     private void initializePlayer() {
         if (player == null) {
+
+            playerNotificationManager = musicControlNotification.getPlayerNotificationManager(this.title);
+            // omit skip previous and next actions
+            playerNotificationManager.setUseNavigationActions(false);
+            // omit fast forward action by setting the increment to zero
+            playerNotificationManager.setFastForwardIncrementMs(0);
+            // omit rewind action by setting the increment to zero
+            playerNotificationManager.setRewindIncrementMs(0);
+            // omit the stop action
+            //playerNotificationManager.setStopAction(null);
+            playerNotificationManager.setBadgeIconType(0);
+            playerNotificationManager.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
+            playerNotificationManager.setOngoing(true);
+            Log.e("PLAYER", "setupPlayer end");
+
+
+
+
             TrackSelection.Factory videoTrackSelectionFactory = new AdaptiveTrackSelection.Factory(BANDWIDTH_METER);
             trackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
             DefaultAllocator allocator = new DefaultAllocator(true, C.DEFAULT_BUFFER_SEGMENT_SIZE);
@@ -246,6 +277,7 @@ class ReactExoplayerView extends FrameLayout implements
             player.addListener(this);
             player.setMetadataOutput(this);
             exoPlayerView.setPlayer(player);
+
             audioBecomingNoisyReceiver.setListener(this);
             setPlayWhenReady(!isPaused);
             playerNeedsSource = true;
@@ -272,6 +304,7 @@ class ReactExoplayerView extends FrameLayout implements
                 player.seekTo(resumeWindow, resumePosition);
             }
             player.prepare(mediaSource, !haveResumePosition, false);
+            playerNotificationManager.setPlayer(player);
             playerNeedsSource = false;
 
             eventEmitter.loadStart();
@@ -730,6 +763,14 @@ class ReactExoplayerView extends FrameLayout implements
                 reloadSource();
             }
         }
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 
     public void setTextTracks(ReadableArray textTracks) {

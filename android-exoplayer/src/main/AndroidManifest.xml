@@ -1,3 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="com.brentvatne.react">
+    <application>
+        <!-- The main service, handles playback, playlists and media buttons -->
+        <service android:stopWithTask="false" android:name=".MusicControlNotification$NotificationService" />
+    </application>
 </manifest>
