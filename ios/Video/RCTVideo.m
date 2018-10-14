@@ -4,6 +4,7 @@
 #import <React/RCTEventDispatcher.h>
 #import <React/UIView+React.h>
 #include <MediaAccessibility/MediaAccessibility.h>
+#import <MediaPlayer/MediaPlayer.h>
 #include <AVFoundation/AVFoundation.h>
 
 static NSString *const statusKeyPath = @"status";
@@ -366,6 +367,15 @@ static int const RCTVideoUnset = -1;
     }];
   });
   _videoLoadStarted = YES;
+    
+  //Update lockscreen
+    NSDictionary *info = @{
+                           MPMediaItemPropertyArtist: @"Test",
+                           MPMediaItemPropertyAlbumTitle: @"Test",
+                           MPMediaItemPropertyTitle:  @"Test",
+                           MPNowPlayingInfoPropertyPlaybackRate :@1.0f };
+    
+    [[MPNowPlayingInfoCenter defaultCenter]setNowPlayingInfo:info];
 }
 
 - (NSURL*) urlFilePath:(NSString*) filepath {

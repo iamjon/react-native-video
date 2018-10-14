@@ -37,6 +37,8 @@
 @property (nonatomic, copy) RCTBubblingEventBlock onPlaybackRateChange;
 @property (nonatomic, copy) RCTBubblingEventBlock onVideoExternalPlaybackChange;
 
+//@property(nonatomic) BOOL updatesNowPlayingInfoCenter;
+
 - (instancetype)initWithEventDispatcher:(RCTEventDispatcher *)eventDispatcher NS_DESIGNATED_INITIALIZER;
 
 - (AVPlayerViewController*)createPlayerViewController:(AVPlayer*)player withPlayerItem:(AVPlayerItem*)playerItem;
